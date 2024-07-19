@@ -1,26 +1,24 @@
 import { GameObjects, Scene } from 'phaser';
-
 import { EventBus } from '../EventBus';
 
-export class Game extends Scene
-{
+const DPR = window.devicePixelRatio;
+
+export class Game extends Scene {
     background: GameObjects.Image;
     title: GameObjects.Text;
-    
-    constructor ()
-    {
+
+    constructor() {
         super('Game');
     }
 
-    create ()
-    {
-        this.background = this.add.image(512, 384, 'background');
+    create() {
+        const width = this.scale.width;
+        const height = this.scale.height;
 
-        this.title = this.add.text(512, 460, 'Main Menu', {
-            fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
-            stroke: '#000000', strokeThickness: 8,
-            align: 'center'
-        }).setOrigin(0.5).setDepth(100);
+        this.background = this.add.image(width * 0.5, height * 0.5, 'background').setScale(DPR);
+
+        this.physics.world.setBounds(0, 0, width, height);
+        this.physics.world.setBoundsCollision(true, true, false, false);
 
         EventBus.emit('current-scene-ready', this);
     }

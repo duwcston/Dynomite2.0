@@ -1,5 +1,5 @@
 import { Boot } from './scenes/Boot';
-import { Game as MainGame} from './scenes/Game';
+import { Game as MainGame } from './scenes/Game';
 import { AUTO, Game } from 'phaser';
 import { Preloader } from './scenes/Preloader';
 
@@ -10,13 +10,25 @@ const config: Phaser.Types.Core.GameConfig = {
     width: 1024,
     height: 768,
     parent: 'game-container',
-    backgroundColor: '#028af8',
+    backgroundColor: '#1c1c1c',
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { x: 0, y: 0 },
+            debug: true
+        }
+    },
     scene: [
         Boot,
         Preloader,
-        MainGame,
-
-    ]
+        MainGame
+    ],
+    callbacks: {
+        postBoot: function (game) {
+            game.canvas.style.width = '100%';
+            game.canvas.style.height = '100%';
+        }
+    }
 };
 
 const StartGame = (parent: string) => {
