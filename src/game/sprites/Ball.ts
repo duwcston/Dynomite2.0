@@ -7,16 +7,15 @@ export class Ball {
     x: number;
     y: number;
     color: string;
-    ball: Phaser.Physics.Arcade.Image | undefined;
+    image: Phaser.Physics.Arcade.Image;
 
-    constructor(scene: Phaser.Scene, row: number, col: number) {
+    constructor(scene: Phaser.Scene, row: number, col: number, color?: string) {
         this.scene = scene;
         this.row = row;
         this.col = col;
         this.x = 0;
         this.y = 0;
-        this.ball = undefined;
-        this.color = this.getRandomColor();
+        this.color = color || this.getRandomColor() ;
         this.calculatePosition();
     }
 
@@ -26,13 +25,15 @@ export class Ball {
     }
 
     createSingleBall(): void {
-        console.log('Creating ball at:', this.x, this.y);
-        const ball = this.scene.physics.add.image(this.x, this.y, `ball_${this.color}`)
+        this.image = this.scene.physics.add.image(this.x, this.y, `ball_${this.color}`)
             .setScale(BALL_SCALE)
             .setCircle(BALL_RADIUS)
             .setOrigin(0, 0)
             .setImmovable();
-        console.log(ball.texture.key);
+
+        (this.image as any).owner = this;
+
+        console.log(`Created ball at (${this.x}, ${this.y}) with color ${this.color}`);
     }
 
     private calculatePosition(): void {

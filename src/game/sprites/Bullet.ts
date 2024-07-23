@@ -4,7 +4,7 @@ import Phaser from 'phaser';
 import { Grid } from './Grid';
 
 export class Bullet extends Ball {
-    bullet: Phaser.Physics.Arcade.Image | null;
+    bullet: Phaser.Physics.Arcade.Image;
     velocity: { x: number; y: number };
     readytoShoot: boolean;
     grid: Grid;
@@ -17,37 +17,25 @@ export class Bullet extends Ball {
         this.velocity = { x: 0, y: 0 };
         this.color = this.getRandomColor();
         this.readytoShoot = true;
+        this.createBullet();
     }
 
-    createBullet(): void {
+    public createBullet(): void {
         this.bullet = this.scene.physics.add.image(BULLET_START_X, BULLET_START_Y, `ball_${this.getRandomColor()}`)
             .setScale(BALL_SCALE)
             .setCircle(BALL_RADIUS)
             .setBounce(1)
             .setCollideWorldBounds(true)
-            .setVelocity(0, 0);
+            .setVelocity(0, 0)
+            .setInteractive();
         console.log('this.bullet color:', this.bullet.texture.key);
-
-        this.scene.physics.add.collider(
-            this.bullet,
-            this.grid.ballsGroup,
-            this.onBulletHit,
-            undefined, this);
     }
 
-    onBulletHit(bullet, ball): void {
-        console.log('Bullet hit:', ball);
-        bullet.setVelocity(0, 0);
-        this.readytoShoot = true;
-        const ballPosition = ball.getCenter();
-        this.grid.addBullet({ x: ballPosition.x, y: ballPosition.y }, this);
-        this.createBullet();
-    }
-
-    checkBulletPosition(): void {
+    public checkBulletPosition(): void {
         if (this.bullet && ((this.bullet.y < 0) || this.bullet.y > this.scene.scale.height)) {
             this.createBullet();
             this.readytoShoot = true;
         }
     }
+
 }

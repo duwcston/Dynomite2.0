@@ -24,19 +24,18 @@ export class Game extends Scene {
         this.physics.world.setBounds(0, 0, width, height);
         this.physics.world.setBoundsCollision(true, true, false, false);
 
-        this.grid = new Grid(this);
-
+        // PHẢI TẠO BULLET TRƯỚC GRID VÀ TRƯỚC KHI SỬ DỤNG
         this.bullet = new Bullet(this, this.grid);
-        this.bullet.createBullet();
+
+        this.grid = new Grid(this, this.bullet);
 
         this.guide = new Guide(this, this.bullet);
-
 
         EventBus.emit('current-scene-ready', this);
     }
 
     update(): void {
         this.bullet.checkBulletPosition();
+        this.grid.setCollision();
     }
-
 }
