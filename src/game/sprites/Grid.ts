@@ -69,9 +69,7 @@ export class Grid {
             this.destroyConnectedBalls(ball);
             bullet.destroy();
             // Remove bullet from balls
-
         }
-        // Handle the case when the bullet has small gap with the ball
 
         // Add bullet to the grid after collision
         else {
@@ -132,6 +130,15 @@ export class Grid {
             bulletCollided.createSingleBall();
             console.log("Bullet collided detail:", bulletCollided);
             this.ballGroup.add(bulletCollided.image);
+
+            // Handle the case when the bullet has small gap with another ball which has the same color
+            const nearbyBalls = this.findNeighbors(bulletCollided);
+            for (const nearbyBall of nearbyBalls) {
+                if (nearbyBall.image.texture.key === bullet.texture.key) {
+                    this.destroyConnectedBalls(nearbyBall);
+                    break;
+                }
+            }
         }
 
         this.makeSingleBallsFall();
@@ -307,4 +314,5 @@ export class Grid {
     }
 
     // Add new row to the grid
+    
 }
