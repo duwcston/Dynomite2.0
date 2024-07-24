@@ -37,8 +37,8 @@ export class Ball {
     }
 
     private calculatePosition(): void {
-        const OFFSET = 14; // Offset to decrease the gap between balls and the grid
-        const ballX = this.col * BALL_DIAMETER * BALL_SCALE + 2;
+        const OFFSET = 12; // Offset to increase the gap between balls vs gird && the balls vs the balls
+        const ballX = this.col * BALL_DIAMETER * BALL_SCALE * 1.03 - OFFSET;
         const ballY = BALL_DIAMETER * Math.sin(Math.PI / 3) + this.row * BALL_DIAMETER * BALL_SCALE - this.row * BALL_RADIUS - OFFSET;
 
         if (this.row % 2 === 0) {

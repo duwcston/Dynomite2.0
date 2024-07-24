@@ -37,5 +37,8 @@ export class Game extends Scene {
     update(): void {
         this.bullet.checkBulletPosition();
         this.grid.setCollision();
+
+        this.grid.changeEmptyToNull();
+        this.grid.makeSingleBallsFall();
     }
 }
