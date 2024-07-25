@@ -1,23 +1,30 @@
 import { BULLET_START_X, BULLET_START_Y, BALL_SCALE, BALL_RADIUS } from '../utils/Constants.js';
-import { Ball } from './Ball.js';
 import Phaser from 'phaser';
 import { Grid } from './Grid';
 
-export class Bullet extends Ball {
+export class Bullet {
+    scene: Phaser.Scene;
     bullet: Phaser.Physics.Arcade.Image;
     velocity: { x: number; y: number };
+    color: string;
+    x: number;
+    y: number;
     readytoShoot: boolean;
     grid: Grid;
 
     constructor(scene: Phaser.Scene, grid: Grid) {
-        super(scene, -1, -1); // Passing -1 for row and col as they are not needed for bullet
+        // super(scene, -1, -1); // Passing -1 for row and col as they are not needed for bullet
+        this.scene = scene;
         this.grid = grid;
         this.x = BULLET_START_X;
         this.y = BULLET_START_Y;
         this.velocity = { x: 0, y: 0 };
-        this.color = this.getRandomColor();
         this.readytoShoot = true;
-        this.createBullet();
+    }
+
+    private getRandomColor(): string {
+        const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
+        return colors[Math.floor(Math.random() * colors.length)];
     }
 
     public createBullet(): void {

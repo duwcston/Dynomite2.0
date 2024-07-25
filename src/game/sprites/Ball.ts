@@ -1,4 +1,5 @@
-import { BALL_DIAMETER, BALL_RADIUS, BALL_SCALE } from '../utils/Constants'
+import { BALL_DIAMETER, BALL_RADIUS, BALL_REAL_DIAMETER, BALL_REAL_RADIUS, BALL_SCALE } from '../utils/Constants'
+import { Grid } from './Grid';
 
 export class Ball {
     scene: Phaser.Scene;
@@ -15,11 +16,11 @@ export class Ball {
         this.col = col;
         this.x = 0;
         this.y = 0;
-        this.color = color || this.getRandomColor() ;
+        this.color = color || this.getRandomColor();
         this.calculatePosition();
     }
 
-    public getRandomColor(): string {
+    private getRandomColor(): string {
         const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
         return colors[Math.floor(Math.random() * colors.length)];
     }
@@ -29,24 +30,25 @@ export class Ball {
             .setScale(BALL_SCALE)
             .setCircle(BALL_RADIUS)
             .setOrigin(0, 0)
-            .setImmovable();
+            .setImmovable(true);
 
         (this.image as any).owner = this;
 
-        console.log(`Created ball at (${this.x}, ${this.y}) with color ${this.color}`);
+        // console.log(`Created ball at (${this.x}, ${this.y}) with color ${this.color}`);
     }
 
     private calculatePosition(): void {
         const OFFSET = 12; // Offset to increase the gap between balls vs gird && the balls vs the balls
-        const ballX = this.col * BALL_DIAMETER * BALL_SCALE * 1.03 - OFFSET;
-        const ballY = BALL_DIAMETER * Math.sin(Math.PI / 3) + this.row * BALL_DIAMETER * BALL_SCALE - this.row * BALL_RADIUS - OFFSET;
+        const ballX = this.col * BALL_REAL_DIAMETER * 1.05 - 17;
+        const ballY = BALL_DIAMETER * Math.sin(Math.PI / 3) + this.row * (BALL_REAL_DIAMETER - BALL_RADIUS) - OFFSET;
 
-        if (this.row % 2 === 0) {
+        if (Grid.instance.indent === true) {
             this.x = ballX;
             this.y = ballY;
-        } else {
+        }
+        else {
             if (this.col < 11) {
-                this.x = ballX + BALL_RADIUS * BALL_SCALE;
+                this.x = ballX + BALL_REAL_RADIUS;
                 this.y = ballY;
             }
         }

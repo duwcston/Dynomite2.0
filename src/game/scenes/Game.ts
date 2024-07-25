@@ -26,8 +26,11 @@ export class Game extends Scene {
 
         // PHẢI TẠO BULLET TRƯỚC GRID VÀ TRƯỚC KHI SỬ DỤNG
         this.bullet = new Bullet(this, this.grid);
+        this.bullet.createBullet();
 
         this.grid = new Grid(this, this.bullet);
+        this.grid.createGrid();
+        this.grid.startAddingRows(10000); // Add new rows every 10 seconds
 
         this.guide = new Guide(this, this.bullet);
 
@@ -35,10 +38,9 @@ export class Game extends Scene {
     }
 
     update(): void {
-        this.bullet.checkBulletPosition();
-        this.grid.setCollision();
-
         this.grid.changeEmptyToNull();
+        this.grid.setCollision();
         this.grid.makeSingleBallsFall();
+        this.bullet.checkBulletPosition();
     }
 }
