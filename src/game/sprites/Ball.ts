@@ -38,19 +38,16 @@ export class Ball {
     }
 
     private calculatePosition(): void {
-        const OFFSET = 12; // Offset to increase the gap between balls vs gird && the balls vs the balls
         const ballX = this.col * BALL_REAL_DIAMETER * 1.05 - 17;
-        const ballY = BALL_DIAMETER * Math.sin(Math.PI / 3) + this.row * (BALL_REAL_DIAMETER - BALL_RADIUS) - OFFSET;
+        const ballY = this.row * BALL_REAL_DIAMETER - 12;
 
-        if (Grid.instance.indent === true) {
+        if (Grid.instance.indent === false) {
             this.x = ballX;
             this.y = ballY;
         }
         else {
-            if (this.col < 11) {
-                this.x = ballX + BALL_REAL_RADIUS;
-                this.y = ballY;
-            }
+            this.x = ballX + BALL_REAL_RADIUS;
+            this.y = ballY;
         }
     }
 }

@@ -13,7 +13,7 @@ export const BALL_SCALE = 5;
 export const BULLET_START_X = 512;
 export const BULLET_START_Y = 720;
 
-export const BALL_SPEED = 1000;
+export const BALL_SPEED = 1200;
 
 export const BALL_DIAMETER = 17;
 export const BALL_RADIUS = BALL_DIAMETER / 2;

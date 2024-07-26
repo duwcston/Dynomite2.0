@@ -1,4 +1,4 @@
-import { BALL_RADIUS, BALL_REAL_DIAMETER } from '../utils/Constants.js';
+import { BALL_REAL_DIAMETER } from '../utils/Constants.js';
 import { Ball } from './Ball.js';
 import { Bullet } from './Bullet';
 import Phaser from 'phaser';
@@ -8,7 +8,6 @@ export class Grid {
     balls: (Ball | null)[][];
     bullet: Bullet;
     ballGroup: Phaser.Physics.Arcade.Group;
-    distanceThreshold: number;
 
     private _indent: boolean;
     private static _instance: Grid;
@@ -21,7 +20,7 @@ export class Grid {
         return Grid._instance;
     }
 
-    constructor(scene: Phaser.Scene, bullet: Bullet, distanceThreshold: number = BALL_REAL_DIAMETER + BALL_RADIUS) {
+    constructor(scene: Phaser.Scene, bullet: Bullet) {
         Grid._instance = this;
 
         this.scene = scene;
@@ -32,8 +31,6 @@ export class Grid {
             runChildUpdate: true
         });
         this.bullet = bullet;
-        this.distanceThreshold = distanceThreshold;
-
     }
 
     // Store the initial balls in the grid with 3 rows and 12/11 columns
@@ -44,12 +41,11 @@ export class Grid {
             const rowBalls: (Ball | null)[] = [];
             for (let col = 0; col < cols; col++) {
                 if (row % 2 === 0) {
-                    this._indent = true;
+                    this._indent = false;
                 }
                 if (row % 2 !== 0) {
-                    this._indent = false;
+                    this._indent = true;
                     if (col >= 11) {
-                        rowBalls.push(null);
                         continue;
                     }
                 }
@@ -58,6 +54,7 @@ export class Grid {
                 rowBalls.push(newBall);
 
                 this.ballGroup.add(newBall.image);
+                console.log('Row:', row, 'Col:', col, 'Indent:', this._indent);
             }
             this.balls.push(rowBalls);
         }
@@ -71,31 +68,26 @@ export class Grid {
 
     // Check collision between bullet
     private handleCollision(bullet: Phaser.Physics.Arcade.Sprite, sprite: Phaser.Physics.Arcade.Sprite): void {
-        console.log('Collision detected between bullet and ball');
         bullet.body?.velocity.setTo(0);
-        bullet.body!.immovable = true;
-        sprite.body!.immovable = true;
 
         const bulletColor = bullet.texture.key.split('_')[1];
-        console.log('Sprite color:', sprite.texture.key);
-        console.log('Bullet color:', bulletColor);
 
         const ball = (sprite as any).owner as Ball
 
         if (bullet.texture.key === sprite.texture.key) {
-            console.log('Same color detected');
+            // console.log('Same color detected');
             this.destroyConnectedBalls(ball);
             bullet.destroy();
         }
 
         // Add bullet to the grid after collision
         else {
-            console.log("Ball collided detail:", ball);
+            console.log("Ball collided detail:", ball.row);
 
             let bulletCollided: Ball | null = null;
 
-            if (ball.row % 2 !== 0) { // Odd row
-                this._indent = true;
+            if (this.balls[ball.row].length === 11) { // Odd row
+                this._indent = false;
                 if (bullet.x > ball.x && bullet.y > ball.y) { // Bottom right
                     bulletCollided = new Ball(this.scene, ball.row + 1, ball.col + 1, bulletColor);
                 }
@@ -115,7 +107,7 @@ export class Grid {
                     bulletCollided = new Ball(this.scene, ball.row, ball.col, bulletColor);
                 }
             } else { // Even row
-                this._indent = false;
+                this._indent = true;
                 if (bullet.x > ball.x && bullet.y > ball.y && ball.col < 11) { // Bottom right
                     bulletCollided = new Ball(this.scene, ball.row + 1, ball.col, bulletColor);
                 }
@@ -136,18 +128,22 @@ export class Grid {
                 }
             }
 
-            if (bulletCollided.row >= this.gridLength())
-                this.balls.push([]);
+            if (bulletCollided.row >= this.gridLength()) {
+                if (this.balls[ball.row].length === 12) {
+                    this.balls.push(new Array(11).fill(null));
+                }
+                else {
+                    this.balls.push(new Array(12).fill(null));
+                }
+            }
 
             if (!this.balls[bulletCollided.row]) {
                 this.balls[bulletCollided.row] = [];
             }
 
             this.balls[bulletCollided.row][bulletCollided.col] = bulletCollided;
-
             bullet.destroy();
             bulletCollided.createSingleBall();
-            console.log("Bullet collided detail:", bulletCollided);
             this.ballGroup.add(bulletCollided.image);
 
             // Handle the case when the bullet has small gap with another ball which has the same color
@@ -155,6 +151,8 @@ export class Grid {
             for (const nearbyBall of nearbyBalls) {
                 if (nearbyBall.image.texture.key === bullet.texture.key) {
                     this.destroyConnectedBalls(nearbyBall);
+                    bulletCollided.image.destroy();
+                    bullet.destroy();
                     break;
                 }
             }
@@ -164,10 +162,8 @@ export class Grid {
         this.bullet.createBullet();
         this.bullet.readytoShoot = true;
         console.log('Grid:', this.balls);
-        // console.log('Ball group:', this.ballGroup.getChildren());
 
         this.cleanEmptyRows();
-        console.log('Rows:', this.gridLength());
     }
 
     public changeEmptyToNull() {
@@ -182,13 +178,25 @@ export class Grid {
 
     private findNeighbors(startBall: Ball): Ball[] {
         const neighbors: Ball[] = [];
-        this.balls.forEach(row => {
-            row.forEach(otherBall => {
-                if (otherBall && otherBall !== startBall && Phaser.Math.Distance.Between(startBall.x, startBall.y, otherBall.x, otherBall.y) <= this.distanceThreshold) {
-                    neighbors.push(otherBall);
-                }
-            });
-        });
+
+        const topLeft = this.getTopLeftNeighbor(startBall);
+        if (topLeft) neighbors.push(topLeft);
+
+        const topRight = this.getTopRightNeighbor(startBall);
+        if (topRight) neighbors.push(topRight);
+
+        const middleLeft = this.getMiddleLeftNeighbor(startBall);
+        if (middleLeft) neighbors.push(middleLeft);
+
+        const middleRight = this.getMiddleRightNeighbor(startBall);
+        if (middleRight) neighbors.push(middleRight);
+
+        const bottomLeft = this.getBottomLeftNeighbor(startBall);
+        if (bottomLeft) neighbors.push(bottomLeft);
+
+        const bottomRight = this.getBottomRightNeighbor(startBall);
+        if (bottomRight) neighbors.push(bottomRight);
+
         return neighbors;
     }
 
@@ -229,7 +237,6 @@ export class Grid {
         }
     }
 
-    // Make balls fall when there are empty spaces in the grid
     public makeSingleBallsFall(): void {
         const ballsToFall: Ball[] = [];
 
@@ -246,6 +253,7 @@ export class Grid {
             this.balls[ball.row][ball.col] = null;
             this.ballGroup.remove(ball.image);
 
+            // Falling animation
             this.scene.tweens.add({
                 targets: ball.image,
                 y: ball.image.y + 200,
@@ -257,56 +265,58 @@ export class Grid {
             });
         }
 
-        // Clean up empty rows
         this.cleanEmptyRows();
     }
 
     private isSingle(ball: Ball): boolean {
+        const visited = new Set<Ball>();
+        const queue: Ball[] = [ball];
+        let isConnectedToTop = false;
+
+        while (queue.length > 0) {
+            const currentBall = queue.shift()!;
+
+            if (!visited.has(currentBall)) {
+                visited.add(currentBall);
+
+                // If the ball is in the top row, it's not single
+                if (currentBall.row === 0) {
+                    isConnectedToTop = true;
+                    break;
+                }
+
+                // Add all connected neighbors to the queue
+                const neighbors = this.findNeighbors(currentBall);
+                for (const neighbor of neighbors) {
+                    if (!visited.has(neighbor)) {
+                        queue.push(neighbor);
+                    }
+                }
+            }
+        }
+
+        // If the ball or any connected ball is connected to the top row, return false
+        if (isConnectedToTop) {
+            return false;
+        }
+
+        // If not connected to the top, check if it is surrounded by empty spaces
         let nullCount = 0;
 
-        if (!this.getTopLeftNeighbor(ball)) {
-            nullCount++;
-        }
+        if (!this.getTopLeftNeighbor(ball)) nullCount++;
+        if (!this.getTopRightNeighbor(ball)) nullCount++;
+        if (!this.getMiddleLeftNeighbor(ball)) nullCount++;
+        if (!this.getMiddleRightNeighbor(ball)) nullCount++;
 
-        if (!this.getTopRightNeighbor(ball)) {
-            nullCount++;
-        }
-
-        if (!this.getMiddleLeftNeighbor(ball)) {
-            nullCount++;
-        }
-
-        if (!this.getMiddleRightNeighbor(ball)) {
-            nullCount++;
-        }
-
-        // A ball is considered single if it is not connected to the grid and has 4 or more null neighbors
-        return !this.getUpperRow(ball) || nullCount >= 4;
-    }
-
-    private getUpperRow(ball: Ball): (Ball | null)[] | boolean {
-        const upperRow = this.balls[ball.row - 1];
-
-        if (!upperRow) {
-            // No upper row exists
-            return true;
-        }
-
-        // Check if all elements in the upper row are null
-        if (upperRow.every(cell => cell === (null || undefined))) {
-            return true;
-        }
-
-        else {
-            return upperRow;
-        }
+        // A ball is considered single if it has 4 or more null neighbors
+        return nullCount >= 3;
     }
 
     private getTopLeftNeighbor(ball: Ball) {
         const row = ball.row;
         const col = ball.col;
 
-        if (row % 2 === 0) {
+        if (this.balls[ball.row].length === 12) {
             if (this.balls[row - 1] && this.balls[row - 1][col - 1]) {
                 return (this.balls[row - 1][col - 1]!);
             }
@@ -321,7 +331,7 @@ export class Grid {
         const row = ball.row;
         const col = ball.col;
 
-        if (row % 2 === 0) {
+        if (this.balls[ball.row].length === 12) {
             if (this.balls[row - 1] && this.balls[row - 1][col]) {
                 return (this.balls[row - 1][col]!);
             }
@@ -344,6 +354,37 @@ export class Grid {
         }
     }
 
+    private getBottomLeftNeighbor(ball: Ball) {
+        const row = ball.row;
+        const col = ball.col;
+
+        if (this.balls[ball.row].length === 12) {
+            if (this.balls[row + 1] && this.balls[row + 1][col]) {
+                return (this.balls[row + 1][col]!);
+            }
+        } else {
+            if (this.balls[row + 1] && this.balls[row + 1][col - 1]) {
+                return (this.balls[row + 1][col - 1]!);
+            }
+        }
+    }
+
+    private getBottomRightNeighbor(ball: Ball) {
+        const row = ball.row;
+        const col = ball.col;
+
+        if (this.balls[ball.row].length === 12) {
+            if (this.balls[row + 1] && this.balls[row + 1][col + 1]) {
+                return (this.balls[row + 1][col + 1]!);
+            }
+        } else {
+            if (this.balls[row + 1] && this.balls[row + 1][col]) {
+                return (this.balls[row + 1][col]!);
+            }
+        }
+    }
+
+
     // Continuously add new rows after a certain interval
     public startAddingRows(interval: number): void {
         this.scene.time.addEvent({
@@ -355,23 +396,25 @@ export class Grid {
     }
 
     private addNewRow(): void {
-        const cols = 12;
+        let cols: number;
         const newRow: (Ball | null)[] = [];
+
+        if (this.balls[0].length === 12) {
+            cols = 11;
+        }
+        else {
+            cols = 12;
+        }
 
         // Handle the position of the new row
         for (let col = 0; col < cols; col++) {
-            if (this.gridLength() % 2 === 0) {
+            if (cols === 11) {
                 this._indent = true;
             } else {
                 this._indent = false;
-                if (col >= 11) {
-                    newRow.push(null);
-                    continue;
-                }
             }
             const newBall = new Ball(this.scene, 0, col);
             newBall.createSingleBall();
-            newBall.image.y += 7;
             newRow.push(newBall);
 
             this.ballGroup.add(newBall.image);
@@ -382,15 +425,17 @@ export class Grid {
 
         // Update the row positions of the old balls
         for (let row = 1; row < this.gridLength(); row++) {
+            this._indent = !this._indent;
             for (let col = 0; col < this.balls[row].length; col++) {
                 const oldBall = this.balls[row][col];
+
                 if (oldBall) {
                     oldBall.row = row;
                     oldBall.image.y += BALL_REAL_DIAMETER;
                 }
             }
         }
-        console.log('New row added');
+        console.log('New row added', this.balls);
 
     }
 }

@@ -30,7 +30,7 @@ export class Game extends Scene {
 
         this.grid = new Grid(this, this.bullet);
         this.grid.createGrid();
-        this.grid.startAddingRows(10000); // Add new rows every 10 seconds
+        this.grid.startAddingRows(8000); // Add new rows every 8 seconds
 
         this.guide = new Guide(this, this.bullet);
 
@@ -42,5 +42,14 @@ export class Game extends Scene {
         this.grid.setCollision();
         this.grid.makeSingleBallsFall();
         this.bullet.checkBulletPosition();
+
+        if (this.grid.balls.some(row => row.some(ball => ball && ball.image.y >= this.scale.height - 50))) {
+            this.handleGameOver();
+        }
+    }
+
+    private handleGameOver() {
+        this.scene.pause('Game')
+        this.scene.run('GameOver')
     }
 }

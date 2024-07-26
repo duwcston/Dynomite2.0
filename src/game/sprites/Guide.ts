@@ -10,7 +10,7 @@ export class Guide {
     constructor(scene: Phaser.Scene, bullet: Bullet) {
         this.scene = scene;
         this.bullet = bullet;
-        this.graphics = this.scene.add.graphics({ lineStyle: { width: 4, color: 0xffa500 } });
+        this.graphics = this.scene.add.graphics({ lineStyle: { width: 10, color: 0xffa500 } });
 
         this.scene.input.on('pointermove', this.updateGuide, this);
         this.scene.input.on('pointerdown', this.shootBullet, this);
