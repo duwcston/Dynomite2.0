@@ -13,9 +13,9 @@ export class Bullet {
     grid: Grid;
 
     constructor(scene: Phaser.Scene, grid: Grid) {
-        // super(scene, -1, -1); // Passing -1 for row and col as they are not needed for bullet
         this.scene = scene;
         this.grid = grid;
+        this.createBullet();
         this.x = BULLET_START_X;
         this.y = BULLET_START_Y;
         this.velocity = { x: 0, y: 0 };
@@ -30,12 +30,11 @@ export class Bullet {
     public createBullet(): void {
         this.bullet = this.scene.physics.add.image(BULLET_START_X, BULLET_START_Y, `ball_${this.getRandomColor()}`)
             .setScale(BALL_SCALE)
-            .setCircle(BALL_RADIUS)
+            .setCircle(BALL_RADIUS - 2, 2, 2)
             .setBounce(1)
             .setCollideWorldBounds(true)
-            .setVelocity(0, 0)
-            .setInteractive();
-        console.log('this.bullet color:', this.bullet.texture.key);
+            .setVelocity(0, 0);
+        // console.log('this.bullet color:', this.bullet.texture.key);
     }
 
     public checkBulletPosition(): void {
@@ -44,5 +43,4 @@ export class Bullet {
             this.readytoShoot = true;
         }
     }
-
 }

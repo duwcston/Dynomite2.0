@@ -26,7 +26,6 @@ export class Game extends Scene {
 
         // PHẢI TẠO BULLET TRƯỚC GRID VÀ TRƯỚC KHI SỬ DỤNG
         this.bullet = new Bullet(this, this.grid);
-        this.bullet.createBullet();
 
         this.grid = new Grid(this, this.bullet);
         this.grid.createGrid();

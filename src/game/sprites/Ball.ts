@@ -1,4 +1,4 @@
-import { BALL_DIAMETER, BALL_RADIUS, BALL_REAL_DIAMETER, BALL_REAL_RADIUS, BALL_SCALE } from '../utils/Constants'
+import { BALL_RADIUS, BALL_REAL_DIAMETER, BALL_REAL_RADIUS, BALL_SCALE } from '../utils/Constants'
 import { Grid } from './Grid';
 
 export class Ball {
@@ -28,12 +28,10 @@ export class Ball {
     createSingleBall(): void {
         this.image = this.scene.physics.add.image(this.x, this.y, `ball_${this.color}`)
             .setScale(BALL_SCALE)
-            .setCircle(BALL_RADIUS)
-            .setOrigin(0, 0)
-            .setImmovable(true);
+            .setCircle(BALL_RADIUS - 2, 2, 2)
+            .setOrigin(0, 0);
 
         (this.image as any).owner = this;
-
         // console.log(`Created ball at (${this.x}, ${this.y}) with color ${this.color}`);
     }
 

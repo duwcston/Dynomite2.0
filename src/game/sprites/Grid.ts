@@ -1,4 +1,4 @@
-import { BALL_REAL_DIAMETER } from '../utils/Constants.js';
+import { BALL_REAL_DIAMETER, GRID_COLS, GRID_ROWS } from '../utils/Constants.js';
 import { Ball } from './Ball.js';
 import { Bullet } from './Bullet';
 import Phaser from 'phaser';
@@ -33,10 +33,10 @@ export class Grid {
         this.bullet = bullet;
     }
 
-    // Store the initial balls in the grid with 3 rows and 12/11 columns
+    // Store the initial balls in the grid with 3 rows and GRID_COLS/GRID_COLS- 1 columns
     public createGrid(): void {
-        const rows = 3;
-        const cols = 12;
+        const rows = GRID_ROWS;
+        const cols = GRID_COLS;
         for (let row = 0; row < rows; row++) {
             const rowBalls: (Ball | null)[] = [];
             for (let col = 0; col < cols; col++) {
@@ -45,7 +45,7 @@ export class Grid {
                 }
                 if (row % 2 !== 0) {
                     this._indent = true;
-                    if (col >= 11) {
+                    if (col >= GRID_COLS - 1) {
                         continue;
                     }
                 }
@@ -54,7 +54,7 @@ export class Grid {
                 rowBalls.push(newBall);
 
                 this.ballGroup.add(newBall.image);
-                console.log('Row:', row, 'Col:', col, 'Indent:', this._indent);
+                // console.log('Row:', row, 'Col:', col, 'Indent:', this._indent);
             }
             this.balls.push(rowBalls);
         }
@@ -75,65 +75,84 @@ export class Grid {
         const ball = (sprite as any).owner as Ball
 
         if (bullet.texture.key === sprite.texture.key) {
-            // console.log('Same color detected');
             this.destroyConnectedBalls(ball);
             bullet.destroy();
         }
 
         // Add bullet to the grid after collision
+        // Major bug: Sometimes the bullet will become one with a ball and cannot be destroyed
         else {
-            console.log("Ball collided detail:", ball.row);
+            console.log(`Ball collided : ${sprite.texture.key}, row: ${ball.row}`);
+            // console.log('Bullet collied at:', bullet.x, bullet.y);
+            // console.log('Ball collied at:', ball.x, ball.y);
+            const collidedAngle = Phaser.Math.RadToDeg(Phaser.Math.Angle.Between(bullet.x, bullet.y, ball.x, ball.y));
+            // collidedAngle = collidedAngle * 180 / Math.PI; // Convert to degrees
+            console.log('Collided angle:', collidedAngle);
 
             let bulletCollided: Ball | null = null;
 
-            if (this.balls[ball.row].length === 11) { // Odd row
-                this._indent = false;
-                if (bullet.x > ball.x && bullet.y > ball.y) { // Bottom right
+            if (this.balls[ball.row].length === GRID_COLS - 1) { // Odd row
+
+                if (-135 <= collidedAngle && collidedAngle <= -100) { // Bottom right
+                    this._indent = false;
                     bulletCollided = new Ball(this.scene, ball.row + 1, ball.col + 1, bulletColor);
                 }
-                else if (bullet.x < ball.x && bullet.y > ball.y) { // Bottom left
+                else if (-100 <= collidedAngle && collidedAngle < -45) { // Bottom left
+                    this._indent = false;
                     bulletCollided = new Ball(this.scene, ball.row + 1, ball.col, bulletColor);
                 }
-                else if (bullet.x < ball.x && bullet.y === ball.y) { // Middle left
-                    bulletCollided = new Ball(this.scene, ball.row, ball.col, bulletColor);
-                }
-                else if (bullet.x > ball.x && bullet.y === ball.y) { // Middle right
+                else if ((135 < collidedAngle && collidedAngle < 180) || (-180 < collidedAngle && collidedAngle < -135)) { // Middle right
+                    this._indent = true;
                     bulletCollided = new Ball(this.scene, ball.row, ball.col + 1, bulletColor);
                 }
-                else if (bullet.x > ball.x && bullet.y < ball.y) { // Top right
-                    bulletCollided = new Ball(this.scene, ball.row, ball.col + 1, bulletColor);
+                else if (Math.abs(collidedAngle) < 45) { // Middle left
+                    this._indent = true;
+                    bulletCollided = new Ball(this.scene, ball.row, ball.col - 1, bulletColor);
+                }
+                else if (80 < collidedAngle && collidedAngle <= 135) { // Top right
+                    this._indent = false;
+                    bulletCollided = new Ball(this.scene, ball.row - 1, ball.col + 1, bulletColor);
                 }
                 else { // Top left
-                    bulletCollided = new Ball(this.scene, ball.row, ball.col, bulletColor);
+                    this._indent = false;
+                    bulletCollided = new Ball(this.scene, ball.row - 1, ball.col, bulletColor);
                 }
-            } else { // Even row
-                this._indent = true;
-                if (bullet.x > ball.x && bullet.y > ball.y && ball.col < 11) { // Bottom right
+            }
+
+            else { // Even row
+
+                if (-135 <= collidedAngle && collidedAngle <= -100 && ball.col !== GRID_COLS - 1) { // Bottom right
+                    this._indent = true;
                     bulletCollided = new Ball(this.scene, ball.row + 1, ball.col, bulletColor);
                 }
-                else if ((bullet.x < ball.x && bullet.y > ball.y) || (bullet.x > ball.x && bullet.y > ball.y && ball.col === 11)) { // Bottom left
+                else if (-100 <= collidedAngle && collidedAngle < -45 && ball.col !== 0) { // Bottom left
+                    this._indent = true;
                     bulletCollided = new Ball(this.scene, ball.row + 1, ball.col - 1, bulletColor);
                 }
-                else if (bullet.x < ball.x && bullet.y === ball.y) { // Middle left
+                else if ((135 < collidedAngle && collidedAngle < 180) || (-180 < collidedAngle && collidedAngle < -135)) { // Middle right
+                    this._indent = false;
+                    bulletCollided = new Ball(this.scene, ball.row, ball.col + 1, bulletColor);
+                }
+                else if (Math.abs(collidedAngle) < 45) { // Middle left
+                    this._indent = false;
                     bulletCollided = new Ball(this.scene, ball.row, ball.col - 1, bulletColor);
                 }
-                else if (bullet.x > ball.x && bullet.y === ball.y && ball.col < 11) { // Middle right
-                    bulletCollided = new Ball(this.scene, ball.row, ball.col + 1, bulletColor);
-                }
-                else if (bullet.x > ball.x && bullet.y < ball.y) { // Top right
-                    bulletCollided = new Ball(this.scene, ball.row, ball.col + 1, bulletColor);
+                else if (80 < collidedAngle && collidedAngle <= 135 && ball.col !== GRID_COLS - 1) { // Top right
+                    this._indent = true;
+                    bulletCollided = new Ball(this.scene, ball.row - 1, ball.col, bulletColor);
                 }
                 else { // Top left
-                    bulletCollided = new Ball(this.scene, ball.row, ball.col - 1, bulletColor);
+                    this._indent = true;
+                    bulletCollided = new Ball(this.scene, ball.row - 1, ball.col - 1, bulletColor);
                 }
             }
 
             if (bulletCollided.row >= this.gridLength()) {
-                if (this.balls[ball.row].length === 12) {
-                    this.balls.push(new Array(11).fill(null));
+                if (this.balls[ball.row].length === GRID_COLS) {
+                    this.balls.push(new Array(GRID_COLS - 1).fill(null));
                 }
                 else {
-                    this.balls.push(new Array(12).fill(null));
+                    this.balls.push(new Array(GRID_COLS).fill(null));
                 }
             }
 
@@ -176,6 +195,65 @@ export class Grid {
         }
     }
 
+    private getTopLeftNeighbor(ball: Ball) {
+        const row = ball.row;
+        const col = ball.col;
+
+        if (this.balls[row].length === GRID_COLS) {
+            return this.balls[row - 1]?.[col - 1] || null;
+        } else {
+            return this.balls[row - 1]?.[col] || null;
+        }
+    }
+
+    private getTopRightNeighbor(ball: Ball) {
+        const row = ball.row;
+        const col = ball.col;
+
+        if (this.balls[row].length === GRID_COLS) {
+            return this.balls[row - 1]?.[col] || null;
+        } else {
+            return this.balls[row - 1]?.[col + 1] || null;
+        }
+    }
+
+    private getMiddleLeftNeighbor(ball: Ball) {
+        const row = ball.row;
+        const col = ball.col;
+
+        return this.balls[row]?.[col - 1] || null;
+    }
+
+    private getMiddleRightNeighbor(ball: Ball) {
+        const row = ball.row;
+        const col = ball.col;
+
+        return this.balls[row]?.[col + 1] || null;
+    }
+
+    private getBottomLeftNeighbor(ball: Ball) {
+        const row = ball.row;
+        const col = ball.col;
+
+        if (this.balls[row].length === GRID_COLS) {
+            return this.balls[row + 1]?.[col - 1] || null;
+        } else {
+            return this.balls[row + 1]?.[col] || null;
+        }
+    }
+
+    private getBottomRightNeighbor(ball: Ball) {
+        const row = ball.row;
+        const col = ball.col;
+
+        if (this.balls[row].length === GRID_COLS) {
+            return this.balls[row + 1]?.[col] || null;
+        } else {
+            return this.balls[row + 1]?.[col + 1] || null;
+        }
+    }
+
+
     private findNeighbors(startBall: Ball): Ball[] {
         const neighbors: Ball[] = [];
 
@@ -200,6 +278,7 @@ export class Grid {
         return neighbors;
     }
 
+    // Minor bug: Sometimes the balls are not destroyed when they are connected 
     private destroyConnectedBalls(ball: Ball): void { // BFS
         const color = ball.image.texture.key.split('_')[1];
         const queue: Ball[] = [ball];
@@ -256,7 +335,7 @@ export class Grid {
             // Falling animation
             this.scene.tweens.add({
                 targets: ball.image,
-                y: ball.image.y + 200,
+                y: ball.image.y + 400,
                 duration: 800,
                 ease: 'linear',
                 onComplete: () => {
@@ -312,78 +391,6 @@ export class Grid {
         return nullCount >= 3;
     }
 
-    private getTopLeftNeighbor(ball: Ball) {
-        const row = ball.row;
-        const col = ball.col;
-
-        if (this.balls[ball.row].length === 12) {
-            if (this.balls[row - 1] && this.balls[row - 1][col - 1]) {
-                return (this.balls[row - 1][col - 1]!);
-            }
-        } else {
-            if (this.balls[row - 1] && this.balls[row - 1][col]) {
-                return (this.balls[row - 1][col]!);
-            }
-        }
-    }
-
-    private getTopRightNeighbor(ball: Ball) {
-        const row = ball.row;
-        const col = ball.col;
-
-        if (this.balls[ball.row].length === 12) {
-            if (this.balls[row - 1] && this.balls[row - 1][col]) {
-                return (this.balls[row - 1][col]!);
-            }
-        } else {
-            if (this.balls[row - 1] && this.balls[row - 1][col + 1]) {
-                return (this.balls[row - 1][col + 1]!);
-            }
-        }
-    }
-
-    private getMiddleLeftNeighbor(ball: Ball) {
-        if (this.balls[ball.row] && this.balls[ball.row][ball.col - 1]) {
-            return (this.balls[ball.row][ball.col - 1]!);
-        }
-    }
-
-    private getMiddleRightNeighbor(ball: Ball) {
-        if (this.balls[ball.row] && this.balls[ball.row][ball.col + 1]) {
-            return (this.balls[ball.row][ball.col + 1]!);
-        }
-    }
-
-    private getBottomLeftNeighbor(ball: Ball) {
-        const row = ball.row;
-        const col = ball.col;
-
-        if (this.balls[ball.row].length === 12) {
-            if (this.balls[row + 1] && this.balls[row + 1][col]) {
-                return (this.balls[row + 1][col]!);
-            }
-        } else {
-            if (this.balls[row + 1] && this.balls[row + 1][col - 1]) {
-                return (this.balls[row + 1][col - 1]!);
-            }
-        }
-    }
-
-    private getBottomRightNeighbor(ball: Ball) {
-        const row = ball.row;
-        const col = ball.col;
-
-        if (this.balls[ball.row].length === 12) {
-            if (this.balls[row + 1] && this.balls[row + 1][col + 1]) {
-                return (this.balls[row + 1][col + 1]!);
-            }
-        } else {
-            if (this.balls[row + 1] && this.balls[row + 1][col]) {
-                return (this.balls[row + 1][col]!);
-            }
-        }
-    }
-
 
     // Continuously add new rows after a certain interval
     public startAddingRows(interval: number): void {
@@ -399,20 +406,16 @@ export class Grid {
         let cols: number;
         const newRow: (Ball | null)[] = [];
 
-        if (this.balls[0].length === 12) {
-            cols = 11;
-        }
-        else {
-            cols = 12;
+        if (this.balls[0].length === GRID_COLS) {
+            cols = GRID_COLS - 1;
+            this._indent = true;
+        } else {
+            cols = GRID_COLS;
+            this._indent = false;
         }
 
         // Handle the position of the new row
         for (let col = 0; col < cols; col++) {
-            if (cols === 11) {
-                this._indent = true;
-            } else {
-                this._indent = false;
-            }
             const newBall = new Ball(this.scene, 0, col);
             newBall.createSingleBall();
             newRow.push(newBall);
@@ -425,7 +428,6 @@ export class Grid {
 
         // Update the row positions of the old balls
         for (let row = 1; row < this.gridLength(); row++) {
-            this._indent = !this._indent;
             for (let col = 0; col < this.balls[row].length; col++) {
                 const oldBall = this.balls[row][col];
 
@@ -435,7 +437,5 @@ export class Grid {
                 }
             }
         }
-        console.log('New row added', this.balls);
-
     }
 }
