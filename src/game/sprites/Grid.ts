@@ -10,10 +10,15 @@ export class Grid {
     ballGroup: Phaser.Physics.Arcade.Group;
 
     private _indent: boolean;
+    private _ballDestroyed: number;
     private static _instance: Grid;
 
     get indent() {
         return this._indent;
+    }
+
+    get ballDestroyed() {
+        return this._ballDestroyed;
     }
 
     static get instance() {
@@ -31,6 +36,11 @@ export class Grid {
             runChildUpdate: true
         });
         this.bullet = bullet;
+        this._ballDestroyed = 0;
+    }
+
+    public set ballDestroyed(value: number) {
+        this._ballDestroyed = value;
     }
 
     // Store the initial balls in the grid with 3 rows and GRID_COLS/GRID_COLS- 1 columns
@@ -83,10 +93,8 @@ export class Grid {
         // Major bug: Sometimes the bullet will become one with a ball and cannot be destroyed
         else {
             console.log(`Ball collided : ${sprite.texture.key}, row: ${ball.row}`);
-            // console.log('Bullet collied at:', bullet.x, bullet.y);
-            // console.log('Ball collied at:', ball.x, ball.y);
-            const collidedAngle = Phaser.Math.RadToDeg(Phaser.Math.Angle.Between(bullet.x, bullet.y, ball.x, ball.y));
-            // collidedAngle = collidedAngle * 180 / Math.PI; // Convert to degrees
+            // const collidedAngle = Phaser.Math.RadToDeg(Phaser.Math.Angle.Between(bullet.x, bullet.y, ball.x, ball.y));
+            const collidedAngle = Math.round(Math.atan2(ball.y - bullet.y, ball.x - bullet.x) * 180 / Math.PI);
             console.log('Collided angle:', collidedAngle);
 
             let bulletCollided: Ball | null = null;
@@ -291,6 +299,8 @@ export class Grid {
                 this.ballGroup.remove(current.image);
                 current.image.destroy();
 
+                this._ballDestroyed++;
+                console.log('Ball destroyed:', this._ballDestroyed);
                 this.balls[current.row][current.col] = null;
                 const neighbors = this.findNeighbors(current);
                 neighbors.forEach(neighbor => {
@@ -331,6 +341,7 @@ export class Grid {
         for (const ball of ballsToFall) {
             this.balls[ball.row][ball.col] = null;
             this.ballGroup.remove(ball.image);
+            this._ballDestroyed++;
 
             // Falling animation
             this.scene.tweens.add({

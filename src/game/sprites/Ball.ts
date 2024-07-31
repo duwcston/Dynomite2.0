@@ -25,7 +25,7 @@ export class Ball {
         return colors[Math.floor(Math.random() * colors.length)];
     }
 
-    createSingleBall(): void {
+    public createSingleBall(): void {
         this.image = this.scene.physics.add.image(this.x, this.y, `ball_${this.color}`)
             .setScale(BALL_SCALE)
             .setCircle(BALL_RADIUS - 2, 2, 2)

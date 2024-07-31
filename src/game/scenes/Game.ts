@@ -3,6 +3,7 @@ import { EventBus } from '../EventBus';
 import { Grid } from '../sprites/Grid';
 import { Bullet } from '../sprites/Bullet';
 import { Guide } from '../sprites/Guide';
+import { Score } from '../sprites/Score';
 
 export class Game extends Scene {
     background: GameObjects.Image;
@@ -10,6 +11,7 @@ export class Game extends Scene {
     bullet: Bullet;
     guide: Guide;
     grid: Grid;
+    score: Score;
 
     constructor() {
         super({ key: 'Game' });
@@ -33,6 +35,8 @@ export class Game extends Scene {
 
         this.guide = new Guide(this, this.bullet);
 
+        this.score = new Score(this);
+
         EventBus.emit('current-scene-ready', this);
     }
 
@@ -40,7 +44,10 @@ export class Game extends Scene {
         this.grid.changeEmptyToNull();
         this.grid.setCollision();
         this.grid.makeSingleBallsFall();
+        
         this.bullet.checkBulletPosition();
+
+        this.score.increaseScore();
 
         if (this.grid.balls.some(row => row.some(ball => ball && ball.image.y >= this.scale.height - 50))) {
             this.handleGameOver();

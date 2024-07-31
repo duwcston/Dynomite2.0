@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { BULLET_START_X, BULLET_START_Y, BALL_SPEED } from '../utils/Constants.js';
+import { BULLET_START_X, BULLET_START_Y, BALL_SPEED, BALL_REAL_RADIUS } from '../utils/Constants.js';
 import { Bullet } from './Bullet.js';
 
 export class Guide {
@@ -10,7 +10,13 @@ export class Guide {
     constructor(scene: Phaser.Scene, bullet: Bullet) {
         this.scene = scene;
         this.bullet = bullet;
-        this.graphics = this.scene.add.graphics({ lineStyle: { width: 10, color: 0xffa500 } });
+        this.graphics = this.scene.add.graphics({
+            lineStyle: {
+                width: BALL_REAL_RADIUS,
+                color: 0xffa500,
+                alpha: 0.5,
+            }
+        });
 
         this.scene.input.on('pointermove', this.updateGuide, this);
         this.scene.input.on('pointerdown', this.shootBullet, this);
